@@ -1,17 +1,31 @@
 {
   "name": "mini-os-shell",
-  "version": "0.1.0",
-  "description": "JavaScript shell interface for Mini OS",
-  "main": "index.js",
+  "version": "1.0.0",
+  "description": "JavaScript shell interface for Mini OS - A lightweight CLI-based operating system with real file system integration",
+  "main": "real-fs-refactored.js",
   "scripts": {
-    "start": "node index.js",
+    "start": "node real-fs-refactored.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "keywords": [
+    "os",
+    "shell",
+    "cli",
+    "file-system",
+    "terminal"
+  ],
+  "author": "Arjun Kandaria",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Kandariarjun07/miniOS.git"
+  },
   "license": "MIT",
   "dependencies": {
     "chalk": "^4.1.2",
     "commander": "^9.4.0",
     "inquirer": "^8.2.4"
+  },
+  "engines": {
+    "node": ">=14.0.0"
   }
 }
