@@ -6,7 +6,7 @@ A lightweight CLI-based operating system built with JavaScript and C++.
 
 This project implements a simple operating system with the following components:
 
-- **Kernel**: Core system functionality (C++)
+- **Kernel**: Core system functionality (C++ or JavaScript simulation)
 - **Shell**: Command-line interface (JavaScript)
 - **File System**: Basic file operations
 - **Process Management**: Create and manage processes
@@ -18,15 +18,23 @@ This project implements a simple operating system with the following components:
 ### Prerequisites
 
 - Node.js (v14+)
-- C++ compiler (g++ or similar)
-- CMake (for building C++ components)
 
 ### Installation
 
+#### JavaScript-only Version (Windows)
+
 1. Clone this repository
-2. Build the C++ components: `cd core && cmake . && make`
-3. Install JavaScript dependencies: `cd shell && npm install`
-4. Start the OS: `npm start`
+2. Run the build script: `build-windows.bat`
+3. Start the OS: `run-windows.bat`
+
+#### Full Version (Linux/macOS)
+
+If you want to build the C++ components as well:
+
+1. Clone this repository
+2. Install prerequisites: C++ compiler and CMake
+3. Build the project: `./build.sh`
+4. Start the OS: `./run.sh`
 
 ## Features
 

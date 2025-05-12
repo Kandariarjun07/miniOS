@@ -1,12 +1,10 @@
 /**
  * Core Interface
- * 
- * This module provides an interface to communicate with the C++ core components
- * using the Foreign Function Interface (FFI).
+ *
+ * This module provides an interface to communicate with the core components.
+ * This is a JavaScript-only version that uses the simulated core.
  */
 
-const ffi = require('ffi-napi');
-const ref = require('ref-napi');
 const path = require('path');
 const fs = require('fs');
 
@@ -20,7 +18,7 @@ class CoreInterface {
     this.lib = null;
     this.initialized = false;
   }
-  
+
   /**
    * Initialize the core interface
    * @returns {Promise<boolean>} - True if initialization was successful
@@ -28,52 +26,17 @@ class CoreInterface {
   async initialize() {
     return new Promise((resolve, reject) => {
       try {
-        // Check if the core library exists
-        if (!fs.existsSync(this.corePath)) {
-          // If not, try to use a simulated core
-          console.log('Core library not found. Using simulated core.');
-          this.useSimulatedCore();
-          this.initialized = true;
-          resolve(true);
-          return;
-        }
-        
-        // Load the core library
-        this.lib = ffi.Library(this.corePath, {
-          'kernel_create': ['pointer', []],
-          'kernel_destroy': ['void', ['pointer']],
-          'kernel_initialize': ['bool', ['pointer']],
-          'kernel_shutdown': ['void', ['pointer']],
-          'kernel_execute_command': ['string', ['pointer', 'string', 'pointer', 'int']]
-        });
-        
-        // Create a kernel instance
-        this.kernel = this.lib.kernel_create();
-        
-        if (this.kernel.isNull()) {
-          reject(new Error('Failed to create kernel instance'));
-          return;
-        }
-        
-        // Initialize the kernel
-        const result = this.lib.kernel_initialize(this.kernel);
-        
-        if (!result) {
-          reject(new Error('Failed to initialize kernel'));
-          return;
-        }
-        
-        this.initialized = true;
-        resolve(true);
-      } catch (error) {
-        console.log('Error loading core library. Using simulated core.');
+        // Always use the simulated core in this JavaScript-only version
+        console.log('Using simulated core.');
         this.useSimulatedCore();
         this.initialized = true;
         resolve(true);
+      } catch (error) {
+        reject(error);
       }
     });
   }
-  
+
   /**
    * Use a simulated core instead of the C++ library
    * This is useful for development and testing
@@ -84,7 +47,7 @@ class CoreInterface {
     this.simulatedCore = new SimulatedCore();
     this.simulatedCore.initialize();
   }
-  
+
   /**
    * Execute a command in the core
    * @param {string} command - Command to execute
@@ -97,38 +60,17 @@ class CoreInterface {
         reject(new Error('Core interface not initialized'));
         return;
       }
-      
+
       try {
-        let result;
-        
-        if (this.simulatedCore) {
-          // Use the simulated core
-          result = this.simulatedCore.executeCommand(command, args);
-        } else {
-          // Use the C++ core
-          // Convert args to a C array
-          const argsArray = new Buffer(args.length * ref.sizeof.pointer);
-          
-          for (let i = 0; i < args.length; i++) {
-            const argBuffer = Buffer.from(args[i] + '\0');
-            ref.writePointer(argsArray, i * ref.sizeof.pointer, argBuffer);
-          }
-          
-          result = this.lib.kernel_execute_command(
-            this.kernel,
-            command,
-            argsArray,
-            args.length
-          );
-        }
-        
+        // Always use the simulated core
+        const result = this.simulatedCore.executeCommand(command, args);
         resolve(result);
       } catch (error) {
         reject(error);
       }
     });
   }
-  
+
   /**
    * Shutdown the core interface
    * @returns {Promise<void>}
@@ -139,17 +81,10 @@ class CoreInterface {
         resolve();
         return;
       }
-      
+
       try {
-        if (this.simulatedCore) {
-          // Shutdown the simulated core
-          this.simulatedCore.shutdown();
-        } else {
-          // Shutdown the C++ core
-          this.lib.kernel_shutdown(this.kernel);
-          this.lib.kernel_destroy(this.kernel);
-        }
-        
+        // Shutdown the simulated core
+        this.simulatedCore.shutdown();
         this.initialized = false;
         resolve();
       } catch (error) {
