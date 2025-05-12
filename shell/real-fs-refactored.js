@@ -288,9 +288,25 @@ const commands = {
     const realPath = getAbsolutePath(filePath);
 
     try {
-      // Create or update the file
-      fs.writeFileSync(realPath, content);
-      return `File ${fs.existsSync(realPath) ? 'updated' : 'created'}: ${filePath}`;
+      // Check if file exists to determine if we're creating or appending
+      const fileExists = fs.existsSync(realPath);
+
+      if (fileExists && content) {
+        // If file exists and content is provided, append with a newline
+        const currentContent = fs.readFileSync(realPath, 'utf8');
+        // Only add a newline if the file is not empty
+        const newContent = currentContent ? currentContent + '\n' + content : content;
+        fs.writeFileSync(realPath, newContent);
+        return `Content appended to file: ${filePath}`;
+      } else if (content) {
+        // Create new file with content
+        fs.writeFileSync(realPath, content);
+        return `File created: ${filePath}`;
+      } else {
+        // Just create an empty file if no content provided
+        fs.writeFileSync(realPath, '');
+        return `Empty file ${fileExists ? 'updated' : 'created'}: ${filePath}`;
+      }
     } catch (error) {
       return `Error: ${error.message}`;
     }
@@ -318,7 +334,18 @@ const commands = {
       }
 
       // Read the file
-      return fs.readFileSync(realPath, 'utf8');
+      const content = fs.readFileSync(realPath, 'utf8');
+
+      // Display file content with line numbers
+      console.log(`\nFile: ${filePath}\n-------------------`);
+      const lines = content.split('\n');
+      for (let i = 0; i < lines.length; i++) {
+        console.log(`${i + 1}| ${lines[i]}`);
+      }
+      console.log('-------------------');
+
+      // Return empty string to prevent additional output
+      return '';
     } catch (error) {
       return `Error: ${error.message}`;
     }
@@ -334,27 +361,94 @@ const commands = {
     const realPath = getAbsolutePath(filePath);
 
     try {
-      // Pause the main readline interface temporarily
-      rl.pause();
-
-      // Launch the editor with a callback to resume the main interface
-      const success = editor.editFile(realPath, () => {
-        // Resume the main readline interface after editor closes
-        rl.resume();
-        promptUser();
-      });
-
-      if (!success) {
-        // If editor failed to start, resume the interface immediately
-        rl.resume();
-        return `Error: Failed to open editor for ${filePath}`;
+      // Read the file content
+      let content = '';
+      if (fs.existsSync(realPath)) {
+        try {
+          content = fs.readFileSync(realPath, 'utf8');
+        } catch (error) {
+          return `Error reading file: ${error.message}`;
+        }
+      } else {
+        console.log(`Creating new file: ${filePath}`);
       }
+
+      // Display the current content
+      console.log(`\nEditing file: ${filePath}`);
+      console.log('Current content:');
+      if (!content) {
+        console.log('(Empty file)');
+      } else {
+        console.log(content);
+      }
+
+      // Prompt for new content
+      console.log('\nEnter new content to append (one line at a time):');
+      console.log('Type "EOF" on a new line when finished.');
+
+      // Create a simple editor function
+      function simpleEditor() {
+        // Temporarily disable the main readline interface
+        const originalCompleter = rl.completer;
+        rl.completer = null;
+
+        // Track new content
+        let newContent = '';
+        let editing = true;
+
+        // Define a recursive function to handle input
+        function handleInput() {
+          if (!editing) return;
+
+          rl.question('> ', (input) => {
+            if (input === 'EOF') {
+              // Save the file
+              try {
+                // Create directory if it doesn't exist
+                const dirPath = path.dirname(realPath);
+                if (dirPath && !fs.existsSync(dirPath)) {
+                  fs.mkdirSync(dirPath, { recursive: true });
+                }
+
+                // Append to existing content
+                const finalContent = content ? content + '\n' + newContent : newContent;
+                fs.writeFileSync(realPath, finalContent);
+                console.log(`\nFile saved: ${filePath}`);
+
+                // Restore the original completer
+                rl.completer = originalCompleter;
+                editing = false;
+
+                // Return to the main prompt
+                promptUser();
+              } catch (error) {
+                console.error(`Error saving file: ${error.message}`);
+
+                // Restore the original completer
+                rl.completer = originalCompleter;
+                editing = false;
+
+                // Return to the main prompt
+                promptUser();
+              }
+            } else {
+              // Add the input to the new content
+              newContent += input + '\n';
+              handleInput();
+            }
+          });
+        }
+
+        // Start handling input
+        handleInput();
+      }
+
+      // Start the simple editor
+      simpleEditor();
 
       // Return empty string to prevent additional output
       return '';
     } catch (error) {
-      // Resume the interface in case of error
-      rl.resume();
       return `Error: ${error.message}`;
     }
   },

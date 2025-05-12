@@ -6,13 +6,24 @@
 
 const readline = require('readline');
 const fs = require('fs');
+const path = require('path');
+
+// Get the file path from command line arguments
+const filePath = process.argv[2];
+
+if (!filePath) {
+  console.error('Error: No file path provided');
+  process.exit(1);
+}
+
+// Start the editor
+editFile(filePath);
 
 /**
  * Start the editor for a file
  * @param {string} filePath - Path to the file to edit
- * @param {Function} callback - Function to call when editor is closed
  */
-function editFile(filePath, callback) {
+function editFile(filePath) {
   // Check if file exists
   let content = '';
   let fileExists = false;
@@ -23,14 +34,12 @@ function editFile(filePath, callback) {
       const stats = fs.statSync(filePath);
       if (!stats.isFile()) {
         console.log(`Error: Not a file: ${filePath}`);
-        if (callback) callback();
-        return false;
+        process.exit(1);
       }
       content = fs.readFileSync(filePath, 'utf8');
     } catch (error) {
       console.log(`Error reading file: ${error.message}`);
-      if (callback) callback();
-      return false;
+      process.exit(1);
     }
   } else {
     console.log(`Creating new file: ${filePath}`);
@@ -63,6 +72,7 @@ function editFile(filePath, callback) {
   console.log('  :c  - Clear screen');
   console.log('  :d <line> - Delete a line');
   console.log('  :e <line> <text> - Edit a specific line');
+  console.log('  :a  - Append mode (add text to end of file)');
   console.log('-----------------------------------');
 
   // Show current content
@@ -100,7 +110,7 @@ function editFile(filePath, callback) {
   function saveFile() {
     try {
       // Create directory if it doesn't exist
-      const dirPath = filePath.substring(0, filePath.lastIndexOf('/'));
+      const dirPath = path.dirname(filePath);
       if (dirPath && !fs.existsSync(dirPath)) {
         fs.mkdirSync(dirPath, { recursive: true });
       }
@@ -127,8 +137,7 @@ function editFile(filePath, callback) {
             if (answer.toLowerCase() === 'y') {
               console.log('Quitting without saving...');
               rl.close();
-              if (callback) callback();
-              return;
+              process.exit(0);
             } else {
               promptEditor();
             }
@@ -136,8 +145,7 @@ function editFile(filePath, callback) {
         } else {
           console.log('Quitting editor...');
           rl.close();
-          if (callback) callback();
-          return;
+          process.exit(0);
         }
       } else if (input === ':w') {
         saveFile();
@@ -148,8 +156,7 @@ function editFile(filePath, callback) {
         }
         console.log('Exiting editor...');
         rl.close();
-        if (callback) callback();
-        return;
+        process.exit(0);
       } else if (input === ':h') {
         console.log('Editor commands:');
         console.log('  :w  - Save changes');
@@ -160,6 +167,7 @@ function editFile(filePath, callback) {
         console.log('  :c  - Clear screen');
         console.log('  :d <line> - Delete a line');
         console.log('  :e <line> <text> - Edit a specific line');
+        console.log('  :a  - Append mode (add text to end of file)');
         promptEditor();
       } else if (input === ':l') {
         console.log('Current file content:');
@@ -192,6 +200,9 @@ function editFile(filePath, callback) {
           modified = true;
         }
         promptEditor();
+      } else if (input === ':a') {
+        console.log('Append mode - Enter text to append to the file (empty line to finish):');
+        appendMode();
       } else {
         // Add the input as a new line
         lines.push(input);
@@ -201,8 +212,19 @@ function editFile(filePath, callback) {
     });
   }
 
-  // Return true to indicate the editor was started successfully
-  return true;
+  /**
+   * Handle append mode
+   */
+  function appendMode() {
+    rl.question('>> ', (input) => {
+      if (input === '') {
+        console.log('Exiting append mode.');
+        promptEditor();
+      } else {
+        lines.push(input);
+        modified = true;
+        appendMode();
+      }
+    });
+  }
 }
-
-module.exports = { editFile };
