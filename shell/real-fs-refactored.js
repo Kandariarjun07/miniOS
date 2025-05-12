@@ -9,7 +9,7 @@
 const readline = require('readline');
 const fs = require('fs');
 const path = require('path');
-const editor = require('./editor-fix');
+const editor = require('./vim-editor');
 
 // ASCII art logo
 const logo = `
@@ -152,7 +152,7 @@ const commands = {
     console.log('  mkdir <path>      - Create directory');
     console.log('  create <path>     - Create file');
     console.log('  show <path>       - Display file contents');
-    console.log('  edit <path>       - Edit file contents');
+    console.log('  edit <path>       - Edit file with Vim-like editor (i=insert, ESC=command, :w=save, :q=quit)');
     console.log('  erase <path>      - Remove file or directory');
     console.log('  trunct <path>     - Truncate file (empty its contents)');
     console.log('  explorer          - Open current directory in Windows Explorer');
