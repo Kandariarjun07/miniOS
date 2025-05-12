@@ -2,7 +2,7 @@
 echo Starting Mini OS...
 
 cd shell
-node real-fs.js
+node real-fs-refactored.js
 if %ERRORLEVEL% NEQ 0 (
     echo Error running Mini OS!
     pause
