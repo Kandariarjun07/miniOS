@@ -6,6 +6,6 @@ echo "Starting Mini OS..."
 
 # Run the JavaScript shell
 cd shell
-node index.js
+node real-fs-refactored.js
 
 echo "Mini OS terminated."

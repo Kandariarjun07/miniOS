@@ -514,14 +514,27 @@ const commands = {
     }
   },
 
-  // Open in Windows Explorer
+  // Open in file explorer (cross-platform)
   explorer: () => {
     const realPath = getAbsolutePath(currentDirectory);
 
     try {
-      // Open directory in Windows Explorer
-      require('child_process').exec(`explorer "${realPath}"`);
-      return `Opening ${currentDirectory} in Windows Explorer...`;
+      // Detect platform and use appropriate command
+      const { platform } = process;
+      let command;
+
+      if (platform === 'win32') {
+        command = `explorer "${realPath}"`;
+      } else if (platform === 'darwin') {
+        command = `open "${realPath}"`;
+      } else if (platform === 'linux') {
+        command = `xdg-open "${realPath}"`;
+      } else {
+        return `Unsupported platform: ${platform}`;
+      }
+
+      require('child_process').exec(command);
+      return `Opening ${currentDirectory} in file explorer...`;
     } catch (error) {
       return `Error: ${error.message}`;
     }

@@ -84,7 +84,7 @@ mini-os/
    run.bat
    ```
 
-### On Unix/Linux/Mac
+### On macOS/Unix/Linux
 
 1. Make the run script executable:
    ```bash
@@ -95,6 +95,8 @@ mini-os/
    ```bash
    ./run.sh
    ```
+
+Note: On macOS, the `explorer` command will use the `open` command to open the Finder at the current directory.
 
 ### Manual Start
 
