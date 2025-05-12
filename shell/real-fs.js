@@ -1,6 +1,6 @@
 /**
  * Mini OS with Real File System
- * 
+ *
  * This version of Mini OS interacts with your actual file system.
  */
 
@@ -16,12 +16,12 @@ const rl = readline.createInterface({
 
 // ASCII art logo
 const logo = `
- __  __ _       _    ___  ____  
-|  \\/  (_)_ __ (_)  / _ \\/ ___| 
-| |\\/| | | '_ \\| | | | | \\___ \\ 
+ __  __ _       _    ___  ____
+|  \\/  (_)_ __ (_)  / _ \\/ ___|
+| |\\/| | | '_ \\| | | | | \\___ \\
 | |  | | | | | | | | |_| |___) |
-|_|  |_|_|_| |_|_|  \\___/|____/ 
-                               
+|_|  |_|_|_| |_|_|  \\___/|____/
+
 `;
 
 // Create root directory for the OS
@@ -32,7 +32,7 @@ if (!fs.existsSync(ROOT_DIR)) {
   try {
     fs.mkdirSync(ROOT_DIR);
     console.log(`Created root directory: ${ROOT_DIR}`);
-    
+
     // Create basic directory structure
     fs.mkdirSync(path.join(ROOT_DIR, 'bin'));
     fs.mkdirSync(path.join(ROOT_DIR, 'home'));
@@ -57,92 +57,94 @@ const commands = {
     console.log('  cd <path>         - Change directory');
     console.log('  pwd               - Print working directory');
     console.log('  mkdir <path>      - Create directory');
-    console.log('  touch <path>      - Create file');
-    console.log('  cat <path>        - Display file contents');
-    console.log('  rm <path>         - Remove file or directory');
+    console.log('  create <path>     - Create file');
+    console.log('  show <path>       - Display file contents');
+    console.log('  edit <path>       - Edit file contents');
+    console.log('  erase <path>      - Remove file or directory');
+    console.log('  trunct <path>     - Truncate file (empty its contents)');
     console.log('  explorer          - Open current directory in Windows Explorer');
     return '';
   },
-  
+
   info: () => {
     return `Mini OS Real File System Version 0.1.0\nRoot directory: ${ROOT_DIR}`;
   },
-  
+
   ls: (args) => {
     const dirPath = args[0] || currentDirectory;
     const realPath = getAbsolutePath(dirPath);
-    
+
     try {
       // Check if directory exists
       if (!fs.existsSync(realPath)) {
         return `Error: Directory not found: ${dirPath}`;
       }
-      
+
       // Check if it's a directory
       const stats = fs.statSync(realPath);
       if (!stats.isDirectory()) {
         return `Error: Not a directory: ${dirPath}`;
       }
-      
+
       // Read directory contents
       const files = fs.readdirSync(realPath);
-      
+
       if (files.length === 0) {
         return 'Directory is empty';
       }
-      
+
       let result = `Contents of ${dirPath}:\n`;
-      
+
       // Sort files alphabetically
       files.sort();
-      
+
       // List directories first, then files
       for (const file of files) {
         const filePath = path.join(realPath, file);
         const fileStats = fs.statSync(filePath);
-        
+
         if (fileStats.isDirectory()) {
           result += `d ${file}/\n`;
         }
       }
-      
+
       for (const file of files) {
         const filePath = path.join(realPath, file);
         const fileStats = fs.statSync(filePath);
-        
+
         if (!fileStats.isDirectory()) {
           result += `f ${file} (${fileStats.size} bytes)\n`;
         }
       }
-      
+
       return result;
     } catch (error) {
       return `Error: ${error.message}`;
     }
   },
-  
+
   cd: (args) => {
     if (!args[0]) {
       // Change to root directory
       currentDirectory = '/';
       return `Changed directory to ${currentDirectory}`;
     }
-    
+
     const dirPath = args[0];
     const realPath = getAbsolutePath(dirPath);
-    
+
     try {
       // Check if directory exists
       if (!fs.existsSync(realPath)) {
         return `Error: Directory not found: ${dirPath}`;
       }
-      
+
       // Check if it's a directory
       const stats = fs.statSync(realPath);
       if (!stats.isDirectory()) {
         return `Error: Not a directory: ${dirPath}`;
       }
-      
+
       // Update current directory
       currentDirectory = normalizePath(dirPath);
       return `Changed directory to ${currentDirectory}`;
@@ -150,25 +152,25 @@ const commands = {
       return `Error: ${error.message}`;
     }
   },
-  
+
   pwd: () => {
     return currentDirectory;
   },
-  
+
   mkdir: (args) => {
     if (!args[0]) {
       return 'Error: Missing directory path';
     }
-    
+
     const dirPath = args[0];
     const realPath = getAbsolutePath(dirPath);
-    
+
     try {
       // Check if directory already exists
       if (fs.existsSync(realPath)) {
         return `Directory already exists: ${dirPath}`;
       }
-      
+
       // Create the directory
       fs.mkdirSync(realPath, { recursive: true });
       return `Directory created: ${dirPath}`;
@@ -176,16 +178,16 @@ const commands = {
       return `Error: ${error.message}`;
     }
   },
-  
-  touch: (args) => {
+
+  create: (args) => {
     if (!args[0]) {
       return 'Error: Missing file path';
     }
-    
+
     const filePath = args[0];
     const content = args.slice(1).join(' ');
     const realPath = getAbsolutePath(filePath);
-    
+
     try {
       // Create or update the file
       fs.writeFileSync(realPath, content);
@@ -194,68 +196,130 @@ const commands = {
       return `Error: ${error.message}`;
     }
   },
-  
-  cat: (args) => {
+
+  show: (args) => {
     if (!args[0]) {
       return 'Error: Missing file path';
     }
-    
+
     const filePath = args[0];
     const realPath = getAbsolutePath(filePath);
-    
+
     try {
       // Check if file exists
       if (!fs.existsSync(realPath)) {
         return `Error: File not found: ${filePath}`;
       }
-      
+
       // Check if it's a file
       const stats = fs.statSync(realPath);
       if (!stats.isFile()) {
         return `Error: Not a file: ${filePath}`;
       }
-      
+
       // Read the file
       return fs.readFileSync(realPath, 'utf8');
     } catch (error) {
       return `Error: ${error.message}`;
     }
   },
-  
-  rm: (args) => {
+
+  edit: (args) => {
+    if (!args[0]) {
+      return 'Error: Missing file path';
+    }
+
+    const filePath = args[0];
+    const content = args.slice(1).join(' ');
+    const realPath = getAbsolutePath(filePath);
+
+    try {
+      // Check if file exists
+      if (!fs.existsSync(realPath)) {
+        return `Error: File not found: ${filePath}`;
+      }
+
+      // Check if it's a file
+      const stats = fs.statSync(realPath);
+      if (!stats.isFile()) {
+        return `Error: Not a file: ${filePath}`;
+      }
+
+      // If no content provided, show current content
+      if (content.length === 0) {
+        return `Current content: ${fs.readFileSync(realPath, 'utf8')}\nUse 'edit <path> <new content>' to modify.`;
+      }
+
+      // Update the file
+      fs.writeFileSync(realPath, content);
+      return `File updated: ${filePath}`;
+    } catch (error) {
+      return `Error: ${error.message}`;
+    }
+  },
+
+  erase: (args) => {
     if (!args[0]) {
       return 'Error: Missing path';
     }
-    
+
     const targetPath = args[0];
     const realPath = getAbsolutePath(targetPath);
-    
+
     try {
       // Check if path exists
       if (!fs.existsSync(realPath)) {
         return `Error: Path not found: ${targetPath}`;
       }
-      
+
       // Check if it's a directory or file
       const stats = fs.statSync(realPath);
-      
+
       if (stats.isDirectory()) {
         // Remove directory recursively
         fs.rmdirSync(realPath, { recursive: true });
-        return `Directory removed: ${targetPath}`;
+        return `Directory erased: ${targetPath}`;
       } else {
         // Remove file
         fs.unlinkSync(realPath);
-        return `File removed: ${targetPath}`;
+        return `File erased: ${targetPath}`;
       }
     } catch (error) {
       return `Error: ${error.message}`;
     }
   },
-  
+
+  trunct: (args) => {
+    if (!args[0]) {
+      return 'Error: Missing file path';
+    }
+
+    const filePath = args[0];
+    const realPath = getAbsolutePath(filePath);
+
+    try {
+      // Check if file exists
+      if (!fs.existsSync(realPath)) {
+        return `Error: File not found: ${filePath}`;
+      }
+
+      // Check if it's a file
+      const stats = fs.statSync(realPath);
+      if (!stats.isFile()) {
+        return `Error: Not a file: ${filePath}`;
+      }
+
+      // Truncate the file (empty its contents)
+      fs.writeFileSync(realPath, '');
+      return `File truncated: ${filePath}`;
+    } catch (error) {
+      return `Error: ${error.message}`;
+    }
+  },
+
   explorer: () => {
     const realPath = getAbsolutePath(currentDirectory);
-    
+
     try {
       // Open directory in Windows Explorer
       require('child_process').exec(`explorer "${realPath}"`);
@@ -275,7 +339,7 @@ const commands = {
  */
 function getAbsolutePath(virtualPath) {
   const normalized = normalizePath(virtualPath);
-  
+
   // Convert virtual path to real path
   // Replace leading / with ROOT_DIR
   const relativePath = normalized === '/' ? '' : normalized.substring(1);
@@ -291,18 +355,18 @@ function normalizePath(inputPath) {
   if (!inputPath) {
     return currentDirectory;
   }
-  
+
   // Handle absolute vs. relative path
   const isAbsolute = inputPath.startsWith('/');
   const basePath = isAbsolute ? '/' : currentDirectory;
-  
+
   // Join with current directory if relative
   const fullPath = isAbsolute ? inputPath : path.posix.join(basePath, inputPath);
-  
+
   // Split path into components
   const components = fullPath.split('/').filter(c => c !== '');
   const result = [];
-  
+
   for (const component of components) {
     if (component === '.') {
       continue;
@@ -314,7 +378,7 @@ function normalizePath(inputPath) {
       result.push(component);
     }
   }
-  
+
   return '/' + result.join('/');
 }
 
@@ -324,7 +388,12 @@ function main() {
   console.log('Mini OS Real File System Version 0.1.0');
   console.log(`Root directory: ${ROOT_DIR}`);
   console.log('Type "help" for available commands, "exit" to quit.');
-  
+
+  // Create command aliases
+  commands.touch = commands.create;  // Alias for backward compatibility
+  commands.cat = commands.show;      // Alias for backward compatibility
+  commands.rm = commands.erase;      // Alias for backward compatibility
+
   promptUser();
 }
 
@@ -335,19 +404,19 @@ function promptUser() {
     if (!input.trim()) {
       return promptUser();
     }
-    
+
     // Parse the input
     const parts = input.trim().split(/\s+/);
     const command = parts[0].toLowerCase();
     const args = parts.slice(1);
-    
+
     // Handle exit command
     if (command === 'exit' || command === 'quit') {
       console.log('Mini OS terminated.');
       rl.close();
       return;
     }
-    
+
     // Execute the command
     if (commands[command]) {
       const result = commands[command](args);
@@ -357,7 +426,7 @@ function promptUser() {
     } else {
       console.log(`Unknown command: ${command}`);
     }
-    
+
     // Prompt for next command
     promptUser();
   });
