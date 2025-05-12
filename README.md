@@ -1,17 +1,10 @@
 # Mini OS
 
-A lightweight CLI-based operating system built with JavaScript and C++.
+A lightweight CLI-based operating system with real file system integration.
 
 ## Project Overview
 
-This project implements a simple operating system with the following components:
-
-- **Kernel**: Core system functionality (C++ or JavaScript simulation)
-- **Shell**: Command-line interface (JavaScript)
-- **File System**: Basic file operations
-- **Process Management**: Create and manage processes
-- **Memory Management**: Allocate and free memory
-- **User Applications**: Simple utilities
+This project implements a simple command-line operating system that interacts with your actual file system. It provides a Unix-like interface for file operations while working with real files on your Windows system.
 
 ## Getting Started
 
@@ -19,46 +12,48 @@ This project implements a simple operating system with the following components:
 
 - Node.js (v14+)
 
-### Installation
+### Running Mini OS
 
-#### JavaScript-only Version (Windows)
+1. Double-click on the `run.bat` file
+2. The system will create a `mini-os-files` directory in your project folder
+3. All file operations will be performed within this directory
 
-1. Clone this repository
-2. Run the build script: `build-windows.bat`
-3. Start the OS: `run-windows.bat`
+## Custom Commands
 
-#### Full Version (Linux/macOS)
+Mini OS uses the following custom commands:
 
-If you want to build the C++ components as well:
+- `create <path> [content]` - Create a new file with optional content
+- `show <path>` - Display file contents
+- `edit <path> [new content]` - Edit file contents
+- `erase <path>` - Remove a file or directory
+- `trunct <path>` - Truncate a file (empty its contents)
 
-1. Clone this repository
-2. Install prerequisites: C++ compiler and CMake
-3. Build the project: `./build.sh`
-4. Start the OS: `./run.sh`
+## All Available Commands
 
-## Features
+- `help` - Show available commands
+- `info` - Show system information and root directory
+- `ls [path]` - List directory contents
+- `cd <path>` - Change directory
+- `pwd` - Print working directory
+- `mkdir <path>` - Create directory
+- `create <path> [content]` - Create a file with optional content
+- `show <path>` - Display file contents
+- `edit <path> [new content]` - Edit file contents
+- `erase <path>` - Remove file or directory
+- `trunct <path>` - Truncate file (empty its contents)
+- `explorer` - Open current directory in Windows Explorer
+- `exit` or `quit` - Exit the program
 
-- Command-line interface
-- Basic file operations (create, read, write, delete)
-- Process creation and management
-- Memory allocation
-- Simple text editor
-- System information tools
-
-## Project Structure
+## Example Usage
 
 ```
-mini-os/
-├── core/               # C++ core components
-│   ├── kernel/         # Kernel implementation
-│   ├── memory/         # Memory management
-│   ├── process/        # Process management
-│   └── filesystem/     # File system implementation
-├── shell/              # JavaScript shell interface
-│   ├── commands/       # Shell commands
-│   ├── utils/          # Utility functions
-│   └── apps/           # User applications
-└── docs/               # Documentation
+mini-os:/> mkdir projects
+mini-os:/> cd projects
+mini-os:/projects> create hello.txt Hello, world!
+mini-os:/projects> show hello.txt
+Hello, world!
+mini-os:/projects> edit hello.txt Updated content
+mini-os:/projects> explorer
 ```
 
 ## License
