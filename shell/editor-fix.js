@@ -1,6 +1,6 @@
 /**
  * Interactive Text Editor for Mini OS
- * 
+ *
  * This module provides a Vim-like text editor with commands like :w, :q, and :x.
  */
 
@@ -10,27 +10,35 @@ const fs = require('fs');
 /**
  * Start the editor for a file
  * @param {string} filePath - Path to the file to edit
+ * @param {Function} callback - Function to call when editor is closed
  */
-function editFile(filePath) {
+function editFile(filePath, callback) {
   // Check if file exists
   let content = '';
+  let fileExists = false;
+
   if (fs.existsSync(filePath)) {
+    fileExists = true;
     try {
       const stats = fs.statSync(filePath);
       if (!stats.isFile()) {
         console.log(`Error: Not a file: ${filePath}`);
+        if (callback) callback();
         return false;
       }
       content = fs.readFileSync(filePath, 'utf8');
     } catch (error) {
       console.log(`Error reading file: ${error.message}`);
+      if (callback) callback();
       return false;
     }
+  } else {
+    console.log(`Creating new file: ${filePath}`);
   }
 
   // Split content into lines
   const lines = content.split('\n');
-  
+
   // Create interface for user input
   const rl = readline.createInterface({
     input: process.stdin,
@@ -39,7 +47,10 @@ function editFile(filePath) {
 
   // Track if file has been modified
   let modified = false;
-  
+
+  // Clear the screen
+  clearScreen();
+
   // Display editor help
   console.log(`Editing file: ${filePath}`);
   console.log('Enter text, one line at a time.');
@@ -49,16 +60,25 @@ function editFile(filePath) {
   console.log('  :x  - Save and quit');
   console.log('  :h  - Show help');
   console.log('  :l  - List file content');
+  console.log('  :c  - Clear screen');
   console.log('  :d <line> - Delete a line');
   console.log('  :e <line> <text> - Edit a specific line');
   console.log('-----------------------------------');
-  
+
   // Show current content
   displayContent(lines);
-  
+
   // Start editor loop
   promptEditor();
-  
+
+  /**
+   * Clear the screen
+   */
+  function clearScreen() {
+    // Use ANSI escape codes to clear the screen
+    process.stdout.write('\x1Bc');
+  }
+
   /**
    * Display the file content with line numbers
    * @param {string[]} lines - Lines of the file
@@ -72,13 +92,19 @@ function editFile(filePath) {
       }
     }
   }
-  
+
   /**
    * Save the file
    * @returns {boolean} - True if save was successful
    */
   function saveFile() {
     try {
+      // Create directory if it doesn't exist
+      const dirPath = filePath.substring(0, filePath.lastIndexOf('/'));
+      if (dirPath && !fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath, { recursive: true });
+      }
+
       fs.writeFileSync(filePath, lines.join('\n'));
       console.log(`File saved: ${filePath}`);
       modified = false;
@@ -88,7 +114,7 @@ function editFile(filePath) {
       return false;
     }
   }
-  
+
   /**
    * Prompt for editor input
    */
@@ -101,6 +127,7 @@ function editFile(filePath) {
             if (answer.toLowerCase() === 'y') {
               console.log('Quitting without saving...');
               rl.close();
+              if (callback) callback();
               return;
             } else {
               promptEditor();
@@ -109,6 +136,7 @@ function editFile(filePath) {
         } else {
           console.log('Quitting editor...');
           rl.close();
+          if (callback) callback();
           return;
         }
       } else if (input === ':w') {
@@ -120,6 +148,7 @@ function editFile(filePath) {
         }
         console.log('Exiting editor...');
         rl.close();
+        if (callback) callback();
         return;
       } else if (input === ':h') {
         console.log('Editor commands:');
@@ -128,11 +157,17 @@ function editFile(filePath) {
         console.log('  :x  - Save and quit');
         console.log('  :h  - Show this help');
         console.log('  :l  - List the file content');
+        console.log('  :c  - Clear screen');
         console.log('  :d <line> - Delete a line');
         console.log('  :e <line> <text> - Edit a specific line');
         promptEditor();
       } else if (input === ':l') {
         console.log('Current file content:');
+        displayContent(lines);
+        promptEditor();
+      } else if (input === ':c') {
+        clearScreen();
+        console.log(`Editing file: ${filePath}`);
         displayContent(lines);
         promptEditor();
       } else if (input.startsWith(':d ')) {
@@ -165,7 +200,8 @@ function editFile(filePath) {
       }
     });
   }
-  
+
+  // Return true to indicate the editor was started successfully
   return true;
 }
 

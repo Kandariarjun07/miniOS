@@ -144,6 +144,7 @@ const commands = {
     console.log('Available commands:');
     console.log('  help              - Show this help message');
     console.log('  exit, quit        - Exit the program');
+    console.log('  clear             - Clear the screen');
     console.log('  info              - Show system information');
     console.log('  ls [path]         - List directory contents');
     console.log('  cd <path>         - Change directory');
@@ -336,18 +337,24 @@ const commands = {
       // Pause the main readline interface temporarily
       rl.pause();
 
-      // Launch the editor in a separate process
-      const success = editor.editFile(realPath);
-
-      // Resume the main readline interface after editor closes
-      setTimeout(() => {
+      // Launch the editor with a callback to resume the main interface
+      const success = editor.editFile(realPath, () => {
+        // Resume the main readline interface after editor closes
         rl.resume();
         promptUser();
-      }, 100);
+      });
+
+      if (!success) {
+        // If editor failed to start, resume the interface immediately
+        rl.resume();
+        return `Error: Failed to open editor for ${filePath}`;
+      }
 
       // Return empty string to prevent additional output
       return '';
     } catch (error) {
+      // Resume the interface in case of error
+      rl.resume();
       return `Error: ${error.message}`;
     }
   },
@@ -424,6 +431,13 @@ const commands = {
     } catch (error) {
       return `Error: ${error.message}`;
     }
+  },
+
+  // Clear the screen
+  clear: () => {
+    // Use ANSI escape codes to clear the screen
+    process.stdout.write('\x1Bc');
+    return '';
   }
 };
 
@@ -445,6 +459,7 @@ function main() {
   commands.touch = commands.create;
   commands.cat = commands.show;
   commands.rm = commands.erase;
+  commands.cls = commands.clear;
 
   // Start the command prompt
   promptUser();
