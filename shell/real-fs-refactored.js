@@ -9,6 +9,7 @@
 const readline = require('readline');
 const fs = require('fs');
 const path = require('path');
+const editor = require('./editor-fix');
 
 // ASCII art logo
 const logo = `
@@ -134,111 +135,6 @@ function readFile(filePath) {
   } catch (error) {
     return `Error reading file: ${error.message}`;
   }
-}
-
-// ===== INTERACTIVE EDITOR =====
-/**
- * Start an interactive editor for a file
- * @param {string} filePath - Virtual path to the file
- * @param {string} realPath - Real path to the file
- * @param {string[]} lines - Current content of the file as an array of lines
- */
-function startInteractiveEditor(filePath, realPath, lines) {
-  // Create a new readline interface for the editor
-  const editorRl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-  });
-
-  // Track if changes have been made
-  let modified = false;
-
-  // Function to show editor prompt
-  const showEditorPrompt = () => {
-    editorRl.question('> ', (input) => {
-      // Handle special commands
-      if (input === ':q') {
-        // Quit without saving
-        console.log('Quitting without saving...');
-        editorRl.close();
-        // Resume the main prompt
-        promptUser();
-        return;
-      } else if (input === ':w') {
-        // Save changes
-        saveFile(realPath, lines.join('\n'));
-        console.log(`File saved: ${filePath}`);
-        modified = false;
-        showEditorPrompt();
-        return;
-      } else if (input === ':x') {
-        // Save and quit
-        if (modified) {
-          saveFile(realPath, lines.join('\n'));
-          console.log(`File saved: ${filePath}`);
-        }
-        console.log('Exiting editor...');
-        editorRl.close();
-        // Resume the main prompt
-        promptUser();
-        return;
-      } else if (input === ':h') {
-        // Show help
-        console.log('Editor commands:');
-        console.log('  :w  - Save changes');
-        console.log('  :q  - Quit without saving');
-        console.log('  :x  - Save and quit');
-        console.log('  :h  - Show this help');
-        console.log('  :l  - List the file content');
-        console.log('  :d <line> - Delete a line');
-        console.log('  :e <line> <text> - Edit a specific line');
-        showEditorPrompt();
-        return;
-      } else if (input === ':l') {
-        // List file content
-        console.log('Current file content:');
-        for (let i = 0; i < lines.length; i++) {
-          console.log(`${i + 1}| ${lines[i]}`);
-        }
-        showEditorPrompt();
-        return;
-      } else if (input.startsWith(':d ')) {
-        // Delete a line
-        const lineNum = parseInt(input.substring(3));
-        if (isNaN(lineNum) || lineNum < 1 || lineNum > lines.length) {
-          console.log(`Error: Invalid line number. File has ${lines.length} lines.`);
-        } else {
-          lines.splice(lineNum - 1, 1);
-          console.log(`Line ${lineNum} deleted.`);
-          modified = true;
-        }
-        showEditorPrompt();
-        return;
-      } else if (input.startsWith(':e ')) {
-        // Edit a specific line
-        const parts = input.substring(3).split(' ');
-        const lineNum = parseInt(parts[0]);
-        if (isNaN(lineNum) || lineNum < 1 || lineNum > lines.length) {
-          console.log(`Error: Invalid line number. File has ${lines.length} lines.`);
-        } else {
-          const newText = parts.slice(1).join(' ');
-          lines[lineNum - 1] = newText;
-          console.log(`Line ${lineNum} updated.`);
-          modified = true;
-        }
-        showEditorPrompt();
-        return;
-      }
-
-      // Add the input as a new line
-      lines.push(input);
-      modified = true;
-      showEditorPrompt();
-    });
-  };
-
-  // Start the editor prompt
-  showEditorPrompt();
 }
 
 // ===== COMMAND HANDLERS =====
@@ -437,37 +333,17 @@ const commands = {
     const realPath = getAbsolutePath(filePath);
 
     try {
-      // Check if file exists and create it if it doesn't
-      let fileContent = '';
-      if (fs.existsSync(realPath)) {
-        // Check if it's a file
-        const stats = fs.statSync(realPath);
-        if (!stats.isFile()) {
-          return `Error: Not a file: ${filePath}`;
-        }
+      // Pause the main readline interface temporarily
+      rl.pause();
 
-        // Read existing content
-        fileContent = fs.readFileSync(realPath, 'utf8');
-      }
+      // Launch the editor in a separate process
+      const success = editor.editFile(realPath);
 
-      // Start interactive editor
-      console.log(`Editing file: ${filePath}`);
-      console.log('Enter text, one line at a time.');
-      console.log('Special commands:');
-      console.log('  :w  - Save changes');
-      console.log('  :q  - Quit without saving');
-      console.log('  :x  - Save and quit');
-      console.log('  :h  - Show help');
-      console.log('-----------------------------------');
-
-      // Show current content with line numbers
-      const lines = fileContent.split('\n');
-      for (let i = 0; i < lines.length; i++) {
-        console.log(`${i + 1}| ${lines[i]}`);
-      }
-
-      // Start interactive editing
-      startInteractiveEditor(filePath, realPath, lines);
+      // Resume the main readline interface after editor closes
+      setTimeout(() => {
+        rl.resume();
+        promptUser();
+      }, 100);
 
       // Return empty string to prevent additional output
       return '';
